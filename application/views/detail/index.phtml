@@ -1,0 +1,207 @@
+<html>
+    <head>
+        <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+        <title>牛逼代码发布 by wangguan</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="description" content="">
+        <meta name="author" content="wangguan">
+        <link href="/http/static/css/bootstrap.min.css" rel="stylesheet">
+        <style>
+			body {
+				padding-top: 60px; /* 60px to make the container go all the way to the bottom of the topbar */
+			}
+        </style>
+		
+        <link href="/http/static/css/bootstrap-responsive.min.css" rel="stylesheet">
+        <link href="/http/static/css/prettify.css" rel="stylesheet" />
+        <link href="/http/static/css/style.css" rel="stylesheet">
+		<?php
+			echo "<script> var svnloglists = " . json_encode($svnloglists) . "</script>";
+		?>
+        <script type="text/javascript" src="/http/static/js/jquery.min.js"></script>
+        <script type="text/javascript" src="/http/static/js/prettify.js"></script>
+        <script type="text/javascript" src="/http/static/js/bootstrap-tab.js"></script>
+        <script type="text/javascript" src="/http/static/js/jsonview.js"></script>
+        <script type="text/javascript" src="/http/static/js/jquery.tmpl.js"></script>
+        <script type="text/javascript" src="/http/static/js/app.js"></script>
+    </head>
+
+    <body>
+
+
+        <div class="navbar navbar-fixed-top">
+            <div class="navbar-inner">
+                <div class="container">
+                    <h1><a class="brand" href="/">牛逼代码发布</a></h1>
+					<div class="nav pull-left">
+                        <div>
+							<ul class="nav">
+								<li class="<?php if ($env == 'test'){ echo 'active';}?>"><a href="/pub?env=test">test分支切换</a></li>
+								<li class="<?php if ($env == 'sanbox'){ echo 'active';}?>"><a href="/pub?env=sanbox">sanbox分支切换</a></li>
+								<li class="<?php if ($env == 'online'){ echo 'active';}?>"><a href="/pub?env=online">发布线上代码</a></li>
+							</ul>
+                        </div>
+                    </div>
+                    <div class="nav pull-right">
+                        <div id="login_user">
+							<ul class="nav">
+								<li><a href="/outlogin">退出</a></li>
+							</ul>
+                            <!--
+                                <a href="/login_to_weibo">登陆</a>
+                            -->
+                        </div>
+                    </div>
+                    <div class="topnav">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+		<style>
+			.params_list ul{
+				list-style:none;margin:0px;
+			}
+			.params_list li{
+				float:left;
+				width:350px;
+				margin-left: 10px
+			}
+
+			.params_list span{
+				display: inline-block;
+				width:130px;
+				text-align:right;
+			}
+
+			.params_list li input{
+				font-size:12px;
+				height: 23px;
+				margin-top: 4px;
+			}
+			.backToTop {
+				display: none;
+				width: 18px;
+				line-height: 1.2;
+				padding: 5px 0;
+				background-color: #000;
+				color: #fff;
+				font-size: 12px;
+				text-align: center;
+				position: fixed;
+				_position: absolute;
+				right: 10px;
+				bottom: 100px;
+				_bottom: "auto";
+				cursor: pointer;
+				opacity: .6;
+				filter: Alpha(opacity=60);
+			}
+			.default_params_list li{
+				clear: both;
+				margin:5px;
+			}
+			.default_params_list li span{
+				width:130px;
+			}
+		</style>
+
+		<div class="container">
+			<div class="row">
+				<?php if ($error_msg != ''){  ?>
+					<h2 style="color:red"><?=$error_msg?></h2>
+				<?php } else {?>
+				<div class="span3">
+
+					<div class="well sidebar-nav">
+						请选择请求服务器: 
+						<h2 style="color:red"><?=$env?></h2>
+						<input name="env" value="<?=$env?>" type="hidden">
+						<input name="project" value="<?=$project?>" type="hidden">
+						项目名称：
+						<h2 style="color:red"><?=$projectinfo['name']?></h2>
+						
+						分支: 
+						<ul class="nav nav-list" id="apiList">
+							<li><a>trunk</a></li>
+							<?php foreach ( $branchlist as $value) { ?>
+								<li><a><?=$value?></a></li>
+							<?php }?>
+						</ul>
+					</div><!--/.well -->
+				</div><!--/span-->
+
+
+				<div class="span9 ">
+					<div class="page-header">
+						<h4>ip列表</h4>
+					</div>
+					<div class="well">
+					<?php
+						foreach ($projectinfo['target_machines'] as $key => $value) {
+							echo '<label class="checkbox"><input type="checkbox" name="target_machines" class="target_machines" value="' . $value . '" checked>' . $value . '</label>';
+						}
+					?>
+					</div>
+					
+					<div class="page-header">
+						<h4>版本</h4>
+					</div>
+					<div class="well">
+						<ul id="params_list" ></ul>
+					</div>
+					
+					<div class="page-header">
+						<h4>API返回信息</h4>
+					</div>
+					<div class="well">
+						<label id="apiRequestUrlInfo" style="color:green"></label>
+						<label><span id="apiRequest"></span></label>
+					</div>
+
+					<div class="page-header">
+						<h4>返回结果</h4>
+					</div>
+
+					<ul class="nav nav-tabs" id="myTab">
+						<li class="active"><a href="#collapsedJson">解析后的Json</a></li>
+						<li><a href="#formatedJson">格式化的Json</a></li>
+						<li><a href="#originalJson">原始结果</a></li>
+					</ul>
+					<div class="tab-content">
+						<pre class="tab-pane active well" id="collapsedJson"></pre>
+						<pre class="tab-pane prettyprint linenums lang-js well" id="formatedJson"></pre>
+						<pre class="tab-pane prettyprint lang-js well" id="originalJson"></pre>
+					</div>
+
+				</div><!--/span-->
+				<?php } ?>
+			</div><!--/row-->
+		</div><!--/.fluid-container-->
+	<div id="footer">
+      <div class="container">
+		  <p class="muted credit"> Copyrigh 2015 by ruanyun</p>
+      </div>
+    </div>
+    </body>
+</html>
+<script>
+    (function () {
+        var $backToTopTxt = "返回顶部", $backToTopEle = $('<div class="backToTop"></div>').appendTo($("body"))
+                .text($backToTopTxt).attr("title", $backToTopTxt).click(function () {
+            $("html, body").animate({scrollTop: 0}, 120);
+        }), $backToTopFun = function () {
+            var st = $(document).scrollTop(), winh = $(window).height();
+            (st > 0) ? $backToTopEle.show() : $backToTopEle.hide();
+            //IE6下的定位
+            if (!window.XMLHttpRequest) {
+                $backToTopEle.css("top", st + winh - 166);
+            }
+        };
+        $(window).bind("scroll", $backToTopFun);
+        $(function () {
+            $backToTopFun();
+        });
+    })();
+</script>

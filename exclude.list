@@ -1,0 +1,4 @@
+.svn
+public/static/fileupload
+public/static/filedownload
+application/daemon/cli.php
